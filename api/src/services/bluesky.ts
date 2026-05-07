@@ -11,11 +11,6 @@ export async function loginWithAppPassword(creds: BlueskyCredentials) {
   return agent;
 }
 
-export async function refreshSession(agent: BskyAgent) {
-  await agent.refreshSession();
-  return agent;
-}
-
 export async function postToBluesky(
   agent: BskyAgent,
   caption: string,

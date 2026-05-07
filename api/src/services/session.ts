@@ -67,12 +67,12 @@ export async function createSession(
   displayName?: string,
   avatarUrl?: string
 ) {
-  await db.insert(users)
-    .onConflictDoUpdate({
-      target: users.did,
-      set: { handle, displayName: displayName ?? null, avatarUrl: avatarUrl ?? null },
-    })
-    .values({ did: userDid, handle, displayName: displayName ?? null, avatarUrl: avatarUrl ?? null });
+  const existingUser = await db.query.users.findFirst({ where: eq(users.did, userDid) });
+  if (existingUser) {
+    await db.update(users).set({ handle, displayName: displayName ?? null, avatarUrl: avatarUrl ?? null }).where(eq(users.did, userDid));
+  } else {
+    await db.insert(users).values({ did: userDid, handle, displayName: displayName ?? null, avatarUrl: avatarUrl ?? null });
+  }
 
   const sessionId = generateSessionId();
   await db.insert(sessions).values({

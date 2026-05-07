@@ -22,6 +22,13 @@
       "when": 1778183488618,
       "tag": "0002_youthful_venus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778184060568,
+      "tag": "0003_handy_manta",
+      "breakpoints": true
     }
   ]
 }

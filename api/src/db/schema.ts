@@ -38,9 +38,6 @@ export const users = sqliteTable('users', {
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userDid: text('user_did').notNull().references(() => users.did, { onDelete: 'cascade' }),
-  handle: text('handle').notNull(),
-  displayName: text('display_name'),
-  avatarUrl: text('avatar_url'),
   accessToken: text('access_token').notNull(),
   refreshToken: text('refresh_token').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),

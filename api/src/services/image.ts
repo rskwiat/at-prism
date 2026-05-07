@@ -38,7 +38,3 @@ export async function processUpload(buffer: Buffer, maxDimension = 2000): Promis
 
   return { metadata: meta, thumbnail };
 }
-
-export function imageToBuffer(image: sharp.Sharp): Buffer {
-  return image.toBuffer();
-}
