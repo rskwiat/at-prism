@@ -27,6 +27,14 @@ export const likes = sqliteTable('likes', {
   pk: uniqueIndex('likes_pk').on(table.uploadId, table.userDid),
 }));
 
+export const users = sqliteTable('users', {
+  did: text('did').primaryKey(),
+  handle: text('handle').notNull(),
+  displayName: text('display_name'),
+  avatarUrl: text('avatar_url'),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
+});
+
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userDid: text('user_did').notNull(),

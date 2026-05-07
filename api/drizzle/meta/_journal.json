@@ -8,6 +8,13 @@
       "when": 1778183202350,
       "tag": "0000_bumpy_hawkeye",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778183388113,
+      "tag": "0001_talented_blizzard",
+      "breakpoints": true
     }
   ]
 }
