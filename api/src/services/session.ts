@@ -57,6 +57,30 @@ export async function getCurrentUser(sessionId: string | undefined): Promise<Use
   };
 }
 
+export async function getUserAccessToken(sessionId: string): Promise<{ accessToken: string; refreshToken: string; did: string; handle: string } | null> {
+  const session = await db.query.sessions.findFirst({
+    where: eq(sessions.id, sessionId),
+  });
+
+  if (!session) return null;
+  if (new Date(session.expiresAt) < new Date()) {
+    return null;
+  }
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.did, session.userDid),
+  });
+
+  if (!user) return null;
+
+  return {
+    accessToken: session.accessToken,
+    refreshToken: session.refreshToken,
+    did: session.userDid,
+    handle: user.handle,
+  };
+}
+
 export async function createSession(
   c: any,
   userDid: string,

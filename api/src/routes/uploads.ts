@@ -6,7 +6,8 @@ import { uploads, likes } from '../db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
 import { uploadToS3, getUploadKey, getThumbnailKey, deleteFromS3 } from '../services/storage';
 import { processUpload } from '../services/image';
-import { postToBluesky } from '../services/bluesky';
+import { postImageToBluesky, createAgent } from '../services/bluesky';
+import { getUserAccessToken } from '../services/session';
 import { v4 as uuid } from 'uuid';
 
 const uploadsRouter = new Hono<{ Variables: ContextVariables }>();
@@ -99,7 +100,19 @@ uploadsRouter.post('/', requireAuth, async (c) => {
 
   let blueskyPostUri: string | null = null;
   if (shareToBluesky) {
-    console.log('Would post to Bluesky with caption:', blueskyCaption);
+    try {
+      const sessionId = c.get('sessionId');
+      if (sessionId) {
+        const creds = await getUserAccessToken(sessionId);
+        if (creds) {
+          const agent = await createAgent(creds.accessToken, creds.did, creds.refreshToken, creds.handle);
+          blueskyPostUri = await postImageToBluesky(agent, blueskyCaption, buffer, title);
+          console.log('Posted to Bluesky:', blueskyPostUri);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to post to Bluesky:', e);
+    }
   }
 
   await db.insert(uploads).values({
