@@ -1,15 +1,30 @@
-import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
+import 'dotenv/config';
+import { serve } from '@hono/node-server';
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { logger } from 'hono/logger';
+import uploadsRouter from './routes/uploads';
+import authRouter from './routes/auth';
+import usersRouter from './routes/users';
+import { validateEnv } from './validate-env';
+import { runMigrations } from './db';
 
-const app = new Hono()
+validateEnv();
+runMigrations();
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+const app = new Hono();
+
+app.use('*', logger());
+app.use('*', cors({ origin: process.env.APP_URL || 'http://localhost:5173', credentials: true }));
+
+app.route('/api/uploads', uploadsRouter);
+app.route('/api/auth', authRouter);
+app.route('/api/users', usersRouter);
+app.get('/api/health', (c) => c.json({ ok: true }));
 
 serve({
   fetch: app.fetch,
-  port: 3000
+  port: parseInt(process.env.PORT || '3000'),
 }, (info) => {
-  console.log(`Server is running on http://localhost:${info.port}`)
-})
+  console.log(`Server running on http://localhost:${info.port}`);
+});
