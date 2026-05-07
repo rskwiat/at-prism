@@ -1,0 +1,14 @@
+{
+  "name": "imgur-bluesky-app",
+  "private": true,
+  "workspaces": [
+    "api",
+    "app"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev -w api\" \"npm:dev -w app\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
