@@ -1,0 +1,137 @@
+{
+  "name": "Imgur Bluesky API",
+  "version": "1.0.0",
+  "type": "collection",
+  "items": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/health"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "Get Public Uploads",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/uploads"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "Auth - Bluesky Login",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/bluesky",
+        "body": {
+          "type": "form",
+          "form": [
+            { "key": "handle", "value": "{{blueskyHandle}}" },
+            { "key": "password", "value": "{{blueskyAppPassword}}" }
+          ]
+        }
+      },
+      "tests": [
+        {
+          "type": "json-resp",
+          "status": 201,
+          "value": "user.did"
+        }
+      ]
+    },
+    {
+      "name": "Auth - Get Current User",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/auth/me"
+      },
+      "headers": {
+        "Cookie": "{{cookie}}"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "Upload - Create",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/uploads",
+        "headers": {
+          "Cookie": "{{cookie}}"
+        },
+        "body": {
+          "type": "multipart",
+          "form": [
+            { "key": "title", "value": "Test Image" },
+            { "key": "description", "value": "Test description" },
+            { "key": "file", "type": "file", "src": "test-image.jpg" },
+            { "key": "isPublic", "value": "true" }
+          ]
+        }
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "Upload - Like",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/uploads/{{uploadId}}/like",
+        "headers": {
+          "Cookie": "{{cookie}}"
+        }
+      },
+      "response": {
+        "status": 201
+      }
+    },
+    {
+      "name": "User - Get Profile",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{userDid}}"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "User - Get Uploads",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/users/{{userDid}}/uploads"
+      },
+      "response": {
+        "status": 200
+      }
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/api/auth/logout",
+        "headers": {
+          "Cookie": "{{cookie}}"
+        }
+      },
+      "response": {
+        "status": 200
+      }
+    }
+  ],
+  "variables": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "blueskyHandle", "value": "your-handle.bsky.social" },
+    { "key": "blueskyAppPassword", "value": "your-app-password" },
+    { "key": "cookie", "value": "" },
+    { "key": "uploadId", "value": "" },
+    { "key": "userDid", "value": "" }
+  ]
+}
