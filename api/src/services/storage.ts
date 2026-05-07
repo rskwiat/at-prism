@@ -1,9 +1,9 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3 = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
-  region: process.env.S3_REGION || 'us-east-1',
+  region: process.env.S3_REGION || 'auto',
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY_ID!,
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
@@ -20,19 +20,16 @@ export async function uploadToS3(key: string, body: Buffer, contentType: string)
     Body: body,
     ContentType: contentType,
   }));
-  return `https://${BUCKET}.${process.env.S3_ENDPOINT?.replace('https://', '')}/${key}`;
-}
 
-export async function getSignedDownloadUrl(key: string, expiresIn = 3600): Promise<string> {
-  const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: key });
-  return getSignedUrl(s3, cmd, { expiresIn });
+  const endpoint = process.env.S3_ENDPOINT!.replace('https://', '');
+  return `https://${BUCKET}.${endpoint}/${key}`;
 }
 
 export async function deleteFromS3(key: string): Promise<void> {
   await s3.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
 
-export function getS3Key(uploadId: string, filename: string): string {
+export function getUploadKey(uploadId: string, filename: string): string {
   const ext = filename.split('.').pop() || 'jpg';
   return `uploads/${uploadId}/original.${ext}`;
 }
