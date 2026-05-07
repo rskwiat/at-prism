@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 
 export const uploads = sqliteTable('uploads', {
   id: text('id').primaryKey(),
-  userDid: text('user_did').notNull(),
+  userDid: text('user_did').notNull().references(() => users.did, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description').default(''),
   s3Key: text('s3_key').notNull(),
@@ -21,7 +21,7 @@ export const uploads = sqliteTable('uploads', {
 
 export const likes = sqliteTable('likes', {
   uploadId: text('upload_id').notNull().references(() => uploads.id, { onDelete: 'cascade' }),
-  userDid: text('user_did').notNull(),
+  userDid: text('user_did').notNull().references(() => users.did, { onDelete: 'cascade' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull(),
 }, (table) => ({
   pk: uniqueIndex('likes_pk').on(table.uploadId, table.userDid),
@@ -37,7 +37,7 @@ export const users = sqliteTable('users', {
 
 export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
-  userDid: text('user_did').notNull(),
+  userDid: text('user_did').notNull().references(() => users.did, { onDelete: 'cascade' }),
   handle: text('handle').notNull(),
   displayName: text('display_name'),
   avatarUrl: text('avatar_url'),
