@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { serveStatic } from './services/storage';
 import uploadsRouter from './routes/uploads';
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
@@ -21,6 +22,13 @@ app.route('/api/uploads', uploadsRouter);
 app.route('/api/auth', authRouter);
 app.route('/api/users', usersRouter);
 app.get('/api/health', (c) => c.json({ ok: true }));
+
+app.get('/uploads/*', async (c) => {
+  const path = c.req.path.replace('/uploads/', '');
+  const data = await serveStatic(path);
+  if (!data) return c.text('Not found', 404);
+  return c.body(data as any);
+});
 
 serve({
   fetch: app.fetch,

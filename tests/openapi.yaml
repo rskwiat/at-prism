@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: Imgur Bluesky API
+  version: 1.0.0
+  description: Photo-sharing app with Bluesky authentication
+
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  /api/uploads:
+    get:
+      summary: Get public uploads
+      parameters:
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [recent, trending]
+            default: recent
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of uploads
+
+    post:
+      summary: Upload an image
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - file
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+                isPublic:
+                  type: boolean
+                  default: true
+                shareToBluesky:
+                  type: boolean
+                  default: false
+                blueskyCaption:
+                  type: string
+      responses:
+        '201':
+          description: Upload created
+
+  /api/uploads/{id}:
+    get:
+      summary: Get single upload
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Upload details
+        '404':
+          description: Not found
+
+    delete:
+      summary: Delete upload (owner only)
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+
+  /api/uploads/{id}/like:
+    post:
+      summary: Like an upload
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Liked
+
+    delete:
+      summary: Unlike an upload
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unliked
+
+  /api/auth/bluesky:
+    post:
+      summary: Login with Bluesky app password
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - handle
+                - password
+              properties:
+                handle:
+                  type: string
+                  example: your-handle.bsky.social
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Login successful
+        '401':
+          description: Invalid credentials
+
+  /api/auth/me:
+    get:
+      summary: Get current user
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Current user info
+
+  /api/auth/logout:
+    post:
+      summary: Logout
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logged out
+
+  /api/users/{did}:
+    get:
+      summary: Get user profile
+      parameters:
+        - name: did
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+
+  /api/users/{did}/uploads:
+    get:
+      summary: Get user uploads
+      parameters:
+        - name: did
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of user's uploads
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session

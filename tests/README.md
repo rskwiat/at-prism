@@ -1,15 +1,11 @@
-# API Testing Guide
+# API Testing with Curl
 
-## Setup
+## Start the server
+```bash
+cd api && npm run dev
+```
 
-1. Start the server:
-   ```bash
-   npm run dev
-   ```
-
-2. Base URL: `http://localhost:3000`
-
-## Test Endpoints
+## Test the API
 
 ### 1. Health Check
 ```bash
@@ -21,63 +17,51 @@ curl http://localhost:3000/api/health
 curl http://localhost:3000/api/uploads
 ```
 
-### 3. Bluesky Login
+### 3. Login with Bluesky (replace YOUR_HANDLE and YOUR_APP_PASSWORD)
 ```bash
 curl -X POST http://localhost:3000/api/auth/bluesky \
-  -d "handle=YOUR_HANDLE.bsky.social" \
-  -d "password=YOUR_APP_PASSWORD" \
-  -c cookies.txt
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "handle=YOUR_HANDLE.bsky.social&password=YOUR_APP_PASSWORD" \
+  -c cookies.txt -v
 ```
 
-### 4. Get Current User (requires auth)
+### 4. Get Current User (after login)
 ```bash
 curl http://localhost:3000/api/auth/me -b cookies.txt
 ```
 
-### 5. Upload Image (requires auth)
+### 5. Upload Image (after login)
 ```bash
 curl -X POST http://localhost:3000/api/uploads \
   -b cookies.txt \
-  -F "title=My Image" \
-  -F "description=A test image" \
-  -F "file=@/path/to/image.jpg"
+  -F "title=Test Image" \
+  -F "description=Testing upload" \
+  -F "isPublic=true" \
+  -F "file=@/path/to/your-image.jpg"
 ```
 
-### 6. Like Upload (requires auth)
+### 6. Like an Upload (replace UPLOAD_ID)
 ```bash
 curl -X POST http://localhost:3000/api/uploads/UPLOAD_ID/like -b cookies.txt
 ```
 
-### 7. Get User Profile
+### 7. Get User Profile (replace DID)
 ```bash
-curl http://localhost:3000/api/users/DID
+curl http://localhost:3000/api/users/did:plc:XXX
 ```
 
-### 8. Get User Uploads
+### 8. Get User Uploads (replace DID)
 ```bash
-curl http://localhost:3000/api/users/DID/uploads
+curl http://localhost:3000/api/users/did:plc:XXX/uploads
 ```
 
-### 9. Logout (requires auth)
+### 9. Logout
 ```bash
 curl -X POST http://localhost:3000/api/auth/logout -b cookies.txt
 ```
 
-## Bruno Collection
-
-Import `tests/api.json` into Bruno/Postman for a pre-built collection.
-
-## Required Env Variables
-
-Create `api/.env` with:
-```
-DATABASE_URL=file:./data.db
-S3_ENDPOINT=https://your-r2-endpoint.r2.cloudflarestorage.com
-S3_REGION=auto
-S3_BUCKET=your-bucket
-S3_ACCESS_KEY_ID=your-key
-S3_SECRET_ACCESS_KEY=your-secret
-APP_URL=http://localhost:3000
-SESSION_SECRET=random-string
-BLUESKY_SERVICE=https://bsky.social
-```
+## Create an App Password
+1. Go to https://bsky.app/settings/app-passwords
+2. Click "Add app password"
+3. Give it a name (e.g., "Imgur Bluesky API")
+4. Use that password in the login request above

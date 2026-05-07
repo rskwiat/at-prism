@@ -72,29 +72,30 @@ uploadsRouter.get('/:id', optionalAuth, async (c) => {
 });
 
 uploadsRouter.post('/', requireAuth, async (c) => {
-  const user = c.get('user')!;
-  const body = await c.req.parseBody();
-  const file = body['file'] as File;
-  const title = body['title'] as string;
-  const description = (body['description'] as string) || '';
-  const isPublic = body['isPublic'] !== 'false';
-  const shareToBluesky = body['shareToBluesky'] === 'true';
-  const blueskyCaption = (body['blueskyCaption'] as string) || title;
+  try {
+    const user = c.get('user')!;
+    const body = await c.req.parseBody();
+    const file = body['file'] as File;
+    const title = body['title'] as string;
+    const description = (body['description'] as string) || '';
+    const isPublic = body['isPublic'] !== 'false';
+    const shareToBluesky = body['shareToBluesky'] === 'true';
+    const blueskyCaption = (body['blueskyCaption'] as string) || title;
 
-  if (!file || !title) {
-    return c.json({ error: 'Bad Request', message: 'file and title are required' }, 400);
-  }
+    if (!file || !title) {
+      return c.json({ error: 'Bad Request', message: 'file and title are required' }, 400);
+    }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  const processed = await processUpload(buffer);
-  const uploadId = uuid();
+    const processed = await processUpload(buffer);
+    const uploadId = uuid();
 
-  const s3Key = getUploadKey(uploadId, file.name);
-  const thumbKey = getThumbnailKey(uploadId);
-  const url = await uploadToS3(s3Key, buffer, file.type);
-  const thumbUrl = await uploadToS3(thumbKey, processed.thumbnail, 'image/webp');
+    const s3Key = getUploadKey(uploadId, file.name);
+    const thumbKey = getThumbnailKey(uploadId);
+    const url = await uploadToS3(s3Key, buffer, file.type);
+    const thumbUrl = await uploadToS3(thumbKey, processed.thumbnail, 'image/webp');
 
   let blueskyPostUri: string | null = null;
   if (shareToBluesky) {
@@ -119,6 +120,10 @@ uploadsRouter.post('/', requireAuth, async (c) => {
   });
 
   return c.json({ id: uploadId, url, thumbnailUrl: thumbUrl, isPublic, blueskyPostUri }, 201);
+  } catch (e: any) {
+    console.error('Upload error:', e);
+    return c.json({ error: 'Internal Error', message: e.message || 'Upload failed' }, 500);
+  }
 });
 
 uploadsRouter.delete('/:id', requireAuth, async (c) => {
