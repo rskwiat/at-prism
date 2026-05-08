@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { ContextVariables } from '../types/context';
+import { createLoginRateLimiter } from '../middleware/rate-limit';
 import { requireAuth } from '../middleware/auth';
 import { loginWithAppPassword } from '../services/bluesky';
 import { createSession, clearSession } from '../services/session';
@@ -9,7 +10,7 @@ import { eq } from 'drizzle-orm';
 
 const authRouter = new Hono<{ Variables: ContextVariables }>();
 
-authRouter.post('/bluesky', async (c) => {
+authRouter.post('/bluesky', createLoginRateLimiter().getMiddleware(), async (c) => {
   const body = await c.req.parseBody();
   const handle = (body['handle'] as string)?.trim();
   const password = (body['password'] as string);
