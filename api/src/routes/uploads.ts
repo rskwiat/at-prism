@@ -1,12 +1,14 @@
 import { Hono } from 'hono';
 import type { ContextVariables } from '../types/context';
 import { requireAuth, optionalAuth } from '../middleware/auth';
+import { createUploadRateLimiter } from '../middleware/rate-limit';
 import { db } from '../db/index';
 import { uploads, likes } from '../db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
 import { uploadToS3, getUploadKey, getThumbnailKey, deleteFromS3 } from '../services/storage';
 import { processUpload } from '../services/image';
-import { postToBluesky } from '../services/bluesky';
+import { postImageToBluesky, createAgent } from '../services/bluesky';
+import { getUserAccessToken } from '../services/session';
 import { v4 as uuid } from 'uuid';
 
 const uploadsRouter = new Hono<{ Variables: ContextVariables }>();
@@ -71,34 +73,47 @@ uploadsRouter.get('/:id', optionalAuth, async (c) => {
   return c.json({ ...upload, likeCount: likeCount[0].count, hasLiked });
 });
 
-uploadsRouter.post('/', requireAuth, async (c) => {
-  const user = c.get('user')!;
-  const body = await c.req.parseBody();
-  const file = body['file'] as File;
-  const title = body['title'] as string;
-  const description = (body['description'] as string) || '';
-  const isPublic = body['isPublic'] !== 'false';
-  const shareToBluesky = body['shareToBluesky'] === 'true';
-  const blueskyCaption = (body['blueskyCaption'] as string) || title;
+uploadsRouter.post('/', requireAuth, createUploadRateLimiter().getMiddleware(), async (c) => {
+  try {
+    const user = c.get('user')!;
+    const body = await c.req.parseBody();
+    const file = body['file'] as File;
+    const title = body['title'] as string;
+    const description = (body['description'] as string) || '';
+    const isPublic = body['isPublic'] !== 'false';
+    const shareToBluesky = body['shareToBluesky'] === 'true';
+    const blueskyCaption = (body['blueskyCaption'] as string) || title;
 
-  if (!file || !title) {
-    return c.json({ error: 'Bad Request', message: 'file and title are required' }, 400);
-  }
+    if (!file || !title) {
+      return c.json({ error: 'Bad Request', message: 'file and title are required' }, 400);
+    }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
 
-  const processed = await processUpload(buffer);
-  const uploadId = uuid();
+    const processed = await processUpload(buffer);
+    const uploadId = uuid();
 
-  const s3Key = getUploadKey(uploadId, file.name);
-  const thumbKey = getThumbnailKey(uploadId);
-  const url = await uploadToS3(s3Key, buffer, file.type);
-  const thumbUrl = await uploadToS3(thumbKey, processed.thumbnail, 'image/webp');
+    const s3Key = getUploadKey(uploadId, file.name);
+    const thumbKey = getThumbnailKey(uploadId);
+    const url = await uploadToS3(s3Key, buffer, file.type);
+    const thumbUrl = await uploadToS3(thumbKey, processed.thumbnail, 'image/webp');
 
   let blueskyPostUri: string | null = null;
   if (shareToBluesky) {
-    console.log('Would post to Bluesky with caption:', blueskyCaption);
+    try {
+      const sessionId = c.get('sessionId');
+      if (sessionId) {
+        const creds = await getUserAccessToken(sessionId);
+        if (creds) {
+          const agent = await createAgent(creds.accessToken, creds.did, creds.refreshToken, creds.handle);
+          blueskyPostUri = await postImageToBluesky(agent, blueskyCaption, buffer, title);
+          console.log('Posted to Bluesky:', blueskyPostUri);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to post to Bluesky:', e);
+    }
   }
 
   await db.insert(uploads).values({
@@ -119,6 +134,10 @@ uploadsRouter.post('/', requireAuth, async (c) => {
   });
 
   return c.json({ id: uploadId, url, thumbnailUrl: thumbUrl, isPublic, blueskyPostUri }, 201);
+  } catch (e: any) {
+    console.error('Upload error:', e);
+    return c.json({ error: 'Internal Error', message: e.message || 'Upload failed' }, 500);
+  }
 });
 
 uploadsRouter.delete('/:id', requireAuth, async (c) => {
