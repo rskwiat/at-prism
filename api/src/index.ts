@@ -30,6 +30,19 @@ app.get('/uploads/*', async (c) => {
   return c.body(data as any);
 });
 
+
+app.notFound((c) => {
+  return c.json({
+    message: `Not Found - ${c.req.path}`
+  }, 404);
+});
+
+app.onError((err, c) => {
+  return c.json({
+    message: err.message
+  }, 500);
+});
+
 serve({
   fetch: app.fetch,
   port: parseInt(process.env.PORT || '3000'),
