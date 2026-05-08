@@ -14,6 +14,9 @@ export class RateLimiter {
             const windowStart = now - this.windowMs;
             const timestamps = this.store.get(key) || [];
             const recentTimestamps = timestamps.filter(ts => ts > windowStart);
+            if (recentTimestamps.length === 0) {
+                this.store.delete(key);
+            }
             if (recentTimestamps.length >= this.limit) {
                 return c.json({ error: 'Too Many Requests', message: 'Rate limit exceeded. Try again later.' }, 429);
             }

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { requireAuth, optionalAuth } from '../middleware/auth';
+import { createUploadRateLimiter } from '../middleware/rate-limit';
 import { db } from '../db/index';
 import { uploads, likes } from '../db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
@@ -63,7 +64,7 @@ uploadsRouter.get('/:id', optionalAuth, async (c) => {
     }
     return c.json({ ...upload, likeCount: likeCount[0].count, hasLiked });
 });
-uploadsRouter.post('/', requireAuth, async (c) => {
+uploadsRouter.post('/', requireAuth, createUploadRateLimiter().getMiddleware(), async (c) => {
     try {
         const user = c.get('user');
         const body = await c.req.parseBody();
