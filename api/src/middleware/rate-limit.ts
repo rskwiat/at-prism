@@ -53,5 +53,8 @@ export function createLoginRateLimiter() {
 }
 
 export function createUploadRateLimiter() {
-  return new RateLimiter({ limit: 1, windowMs: 60 * 1000 });
+  const limiter = new RateLimiter({ limit: 1, windowMs: 60 * 1000 });
+  return {
+    getMiddleware: () => limiter.getMiddleware(),
+  };
 }
